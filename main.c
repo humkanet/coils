@@ -15,10 +15,11 @@
 #define STAGE_COIL2_FORWARD  0x02
 #define STAGE_COIL3_FORWARD  0x03
 #define STAGE_COIL4_FORWARD  0x04
-#define STAGE_COIL4_REVERSE  0x05
-#define STAGE_COIL3_REVERSE  0x06
-#define STAGE_COIL2_REVERSE  0x07
-#define STAGE_COIL1_REVERSE  0x08
+#define STAGE_PAUSE          0x05
+#define STAGE_COIL4_REVERSE  0x06
+#define STAGE_COIL3_REVERSE  0x07
+#define STAGE_COIL2_REVERSE  0x08
+#define STAGE_COIL1_REVERSE  0x09
 #define STAGE_FINISH         0xFF
 
 
@@ -60,6 +61,7 @@ void main()
 	uint8_t   stage = STAGE_FINISH;
 	uint16_t  delay = 1000;
 	uint16_t  ts;
+	uint16_t  pause;
 	for(;;){
 		uint16_t  msec = clock_msec();
 
@@ -74,6 +76,7 @@ void main()
 					}
 					adc_off();
 					delay = U32(adc>>2)*(DELAY_MAX-DELAY_MIN)/ADC_WIDTH + DELAY_MIN;
+					pause = delay<<1;
 					// Включаем первую катушку
 					stage = STAGE_COIL1_FORWARD;
 					ts    = msec;
@@ -106,6 +109,13 @@ void main()
 				break;
 			case STAGE_COIL4_FORWARD:
 				if (U16(msec-ts)>=delay){
+					coil4_off();
+					ts    = msec;
+					stage = STAGE_PAUSE;
+				}
+				break;
+			case STAGE_PAUSE:
+				if (U16(msec-ts)>=pause){
 					coil4_reverse();
 					ts    = msec;
 					stage = STAGE_COIL4_REVERSE;
